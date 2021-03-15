@@ -1,5 +1,6 @@
 # Introduction
 
+Now that our social networking project is up and running and setup with a SQL database, we will try to add some functionality to it, using what we have learned about list comprehension, generators and iterators.
 
 # Part 1: Status update generator/iterator
 
