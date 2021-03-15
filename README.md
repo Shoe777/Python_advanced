@@ -1,2 +1,2 @@
-# Python_advanced_L04
-assignment_04
+# Python_advanced
+assignment
