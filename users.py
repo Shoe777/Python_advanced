@@ -28,12 +28,6 @@ class UserCollection():
                                              user_email=email)
             new_user.save()
             return True
-        # except Exception as exep:
-        #     print(exep)
-        # except peewee.IntegrityError:
-        #     print("Mistake happened")
-        # except sqlite3.IntegrityError:
-        #     print("Mistake happened")
         except IntegrityError:
             print("User is already exist")
             # except IntegrityError as e:      #TODO what's the best practices?
@@ -52,9 +46,6 @@ class UserCollection():
             user.user_last_name = user_last_name
             user.save()
             return True
-        # except Exception as exep:
-        #     print(exep)
-        #     return False
         except DoesNotExist:
             print("User_id doesn't exist at the database")
             return False
@@ -67,9 +58,6 @@ class UserCollection():
             user = self._users_db.get(self._users_db.user_id == user_id)
             user.delete_instance()
             return True
-        # except Exception as exep:
-        #     print(exep)
-        #     return False
         except DoesNotExist:
             print("User_id doesn't exist at the database")
             return False
@@ -81,9 +69,6 @@ class UserCollection():
         try:
             user = self._users_db.get(self._users_db.user_id == user_id)
             return user
-        # except Exception as exep:
-        #     print(exep)
-        #     return None
         except DoesNotExist:
             print("User_id doesn't exist at the database")
             return None

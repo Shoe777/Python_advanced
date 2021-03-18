@@ -147,9 +147,19 @@ def search_all_status_updates():
     Search all status update for user_id
     '''
     user_id = input('User_id: ')
-    result = main.search_all_status_updates(user_id)
-    if
-
+    result = main.search_all_status_updates(user_id, status_collection)
+   # it = iter(result)
+    print(f"A total {result[1]} status updates found for {user_id}")
+    searching = True
+    while searching:
+        #TODO add if else Status_id is there
+        result = main.search_all_status_updates(user_id, status_collection)
+        print(result[0])
+        again = input('\nWould you like to see the next update? (Y/N)')
+        if again.upper() != 'Y':
+            searching = False
+    #TODO print result.count once
+    #TODO return status each time
 
 
 def quit_program():
@@ -178,6 +188,7 @@ if __name__ == '__main__':
         'I': update_status,
         'J': search_status,
         'K': delete_status,
+        'L': search_all_status_updates,
         'Q': quit_program
     }
     while True:
@@ -192,6 +203,7 @@ if __name__ == '__main__':
                             I: Update status
                             J: Search status
                             K: Delete status
+                            L: Search all status  
                             Q: Quit
 
                             Please enter your choice: """)
