@@ -142,27 +142,52 @@ def delete_status():
         print("Status was successfully deleted")
 
 
+def get_status_generator(statuses):
+    for status in statuses:
+        yield status
+
+
+def flagged_status_updates():
+    text = input('Enter the string to search: ')
+    statuses = main.filter_status_by_string(text, status_collection)
+    print([(status.status_id, status.status_text) for status in statuses])
+
+def filter_status_by_string():
+    text = input('Status_text: ')
+    statuses = main.filter_status_by_string(text, status_collection)
+    searching = True
+    try:
+        while searching:
+            next_result = next(statuses)
+            print(f"Status_text: {next_result.status_text}")
+            delete_status = input('\nWould you like to delete status '
+                                  'update? (Y/N)')
+            if delete_status.upper() == 'Y':
+                next_result.delete_instance()
+            again = input('\nWould you like to see the next update? (Y/N)')
+            if again.upper() != 'Y':
+                searching = False
+    except StopIteration:
+        print("INFO: You have reached the last update")
+
 def search_all_status_updates():
     '''
     Search all status update for user_id
     '''
     user_id = input('User_id: ')
-    result = main.search_all_status_updates(user_id, status_collection)
-    print(result)
-    print(f"A total {result} status updates found for {user_id}")
-    # it = iter(result)
+    statuses = main.search_all_status_updates(user_id, status_collection)
+    status_count = len(statuses)
+    print(f"A total {status_count} status updates found for {user_id}")
+    status_generator = get_status_generator(statuses)
     searching = True
-    while searching:
-        #TODO add if else Status_id is there
-        print(result)
-        result = main.search_all_status_updates(user_id, status_collection)
-        # print(result.status_text)
-        again = input('\nWould you like to see the next update? (Y/N)')
-        if again.upper() != 'Y':
-            searching = False
-    # #TODO print result.count once
-    # #TODO return status each time
-
+    try:
+        while searching:
+            print(next(status_generator))
+            again = input('\nWould you like to see the next update? (Y/N)')
+            if again.upper() != 'Y':
+                searching = False
+    except StopIteration:
+        print("INFO: You have reached the last update")
 
 def quit_program():
     '''
@@ -170,7 +195,6 @@ def quit_program():
     '''
     DB.close()
     sys.exit()
-
 
 if __name__ == '__main__':
     DB.connect()
@@ -191,24 +215,28 @@ if __name__ == '__main__':
         'J': search_status,
         'K': delete_status,
         'L': search_all_status_updates,
+        'M': filter_status_by_string,
+        'N': flagged_status_updates,
         'Q': quit_program
     }
     while True:
         USER_SELECTION = input("""
-                            A: Load user database
-                            B: Load status database
-                            C: Add user
-                            D: Update user
-                            E: Search user
-                            F: Delete user
-                            H: Add status
-                            I: Update status
-                            J: Search status
-                            K: Delete status
-                            L: Search all status  
-                            Q: Quit
+                        A: Load user database
+                        B: Load status database
+                        C: Add user
+                        D: Update user
+                        E: Search user
+                        F: Delete user
+                        H: Add status
+                        I: Update status
+                        J: Search status
+                        K: Delete status
+                        L: Search all status 
+                        M: Filter status by string 
+                        N: Flagged Status
+                        Q: Quit
 
-                            Please enter your choice: """)
+                        Please enter your choice: """)
         if USER_SELECTION.upper() in MENU_OPTIONS:
             MENU_OPTIONS[USER_SELECTION.upper()]()
         else:

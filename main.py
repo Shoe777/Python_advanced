@@ -209,3 +209,8 @@ def search_all_status_updates(user_id, status_collection):
     '''
     all_status = status_collection.search_all_status_updates(user_id)
     return all_status
+
+
+def filter_status_by_string(text, status_collection):
+    all_text = status_collection.filter_status_by_string(text)
+    return all_text
