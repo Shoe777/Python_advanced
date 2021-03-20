@@ -148,18 +148,20 @@ def search_all_status_updates():
     '''
     user_id = input('User_id: ')
     result = main.search_all_status_updates(user_id, status_collection)
-   # it = iter(result)
-    print(f"A total {result[1]} status updates found for {user_id}")
+    print(result)
+    print(f"A total {result} status updates found for {user_id}")
+    # it = iter(result)
     searching = True
     while searching:
         #TODO add if else Status_id is there
+        print(result)
         result = main.search_all_status_updates(user_id, status_collection)
-        print(result[0])
+        # print(result.status_text)
         again = input('\nWould you like to see the next update? (Y/N)')
         if again.upper() != 'Y':
             searching = False
-    #TODO print result.count once
-    #TODO return status each time
+    # #TODO print result.count once
+    # #TODO return status each time
 
 
 def quit_program():

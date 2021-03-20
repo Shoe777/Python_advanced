@@ -6,6 +6,7 @@ social network project
 '''
 from peewee import *
 
+
 class UserStatusCollection():
     '''
     Contains a collection of Users Status objects
@@ -16,6 +17,9 @@ class UserStatusCollection():
 
     def __iter__(self):
         return self
+
+    def __next__(self):
+        return self.next()
 
     def add_status(self, status_id, user_id, status_text):
         '''
@@ -76,25 +80,44 @@ class UserStatusCollection():
         Search all status updates for that user
         '''
 
-        # query = StatusTable.select().where(
-        #    StatusTable.user_id == target_user_id)
-
-        query = self._status_db.select().where(
-            self._status_db.user_id == user_id)
-        count = 0
-        for count in query:
-            count += 1
-            return count
+        # # TODO counting:
+        # query = self._status_db.select().where(
+        #     self._status_db.user_id == user_id).count()
+        #
+        # return query
 
 
-        # TODO how to extract all statuses from DB?
-        while True:
-            status = self._status_db.get(self._status_db.used_id == user_id)
-            # TODO is it possible to use search_status function above?
-            count += 1
-            yield status.status_text, count
-            # TODO need total count
-        else:
-            print(f"You have reached the last update for {user_id}")
 
-            # TODO maybe create a List with status_text
+        for query in self._status_db.select().where(
+            self._status_db.user_id == user_id):
+            yield query.status_text
+
+        # TODO list comprehension?
+        # return [status.status_text for status in query]
+        # query.iterator()
+        # for status in query:
+        #     yield status.status_text
+
+    # count = 0
+    # for count in query:
+    #     count += 1
+    #     return count.save()
+
+
+# TODO queries are smart, in that you can iterate, index and slice the query
+# TODO  multiple times but the query is only executed once.
+
+
+# # TODO to extract one status use .get?
+# while True:
+#     status = self._status_db.get(self._status_db.used_id == user_id)
+#     yield status.status_text
+# else:
+#     print(f"You have reached the last update for {user_id}")
+
+def filter_status_by_string(self):
+    query = self._status_db.select().where(
+        self._status_db.status_text.contains('Check')).iterator()
+    next_result = next(query)
+    print(f"User: {next_result.status_text}")
+    pass
