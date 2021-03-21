@@ -5,6 +5,7 @@ social network project
 
 # pylint: disable=W0703
 # pylint: disable=W0614
+# pylint: disable=W0401
 
 from peewee import *
 
@@ -30,8 +31,6 @@ class UserCollection():
             return True
         except IntegrityError:
             print("User is already exist")
-            # except IntegrityError as e:      #TODO what's the best practices?
-            #     print("Error: {}".format(e))
             return False
 
     def modify_user(self, user_id, email, user_name, user_last_name):

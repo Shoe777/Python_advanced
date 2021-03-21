@@ -142,33 +142,44 @@ def delete_status():
         print("Status was successfully deleted")
 
 
-def get_status_generator(statuses):
-    for status in statuses:
-        yield status
-
-
 def flagged_status_updates():
+    '''
+    Show all flagged status updates
+    '''
     text = input('Enter the string to search: ')
     statuses = main.filter_status_by_string(text, status_collection)
     print([(status.status_id, status.status_text) for status in statuses])
 
+
 def filter_status_by_string():
-    text = input('Status_text: ')
+    '''
+    Search all status updates matching a string
+    '''
+    text = input('String in Status_text: ')
     statuses = main.filter_status_by_string(text, status_collection)
     searching = True
     try:
         while searching:
             next_result = next(statuses)
             print(f"Status_text: {next_result.status_text}")
-            delete_status = input('\nWould you like to delete status '
-                                  'update? (Y/N)')
-            if delete_status.upper() == 'Y':
+            delete_text = input('\nWould you like to delete status '
+                                'update? (Y/N)')
+            if delete_text.upper() == 'Y':
                 next_result.delete_instance()
             again = input('\nWould you like to see the next update? (Y/N)')
             if again.upper() != 'Y':
                 searching = False
     except StopIteration:
         print("INFO: You have reached the last update")
+
+
+def get_status_generator(statuses):
+    '''
+    create generator
+    '''
+    for status in statuses:
+        yield status
+
 
 def search_all_status_updates():
     '''
@@ -182,12 +193,14 @@ def search_all_status_updates():
     searching = True
     try:
         while searching:
-            print(next(status_generator))
             again = input('\nWould you like to see the next update? (Y/N)')
             if again.upper() != 'Y':
                 searching = False
+            else:
+                print(next(status_generator))
     except StopIteration:
         print("INFO: You have reached the last update")
+
 
 def quit_program():
     '''
@@ -195,6 +208,7 @@ def quit_program():
     '''
     DB.close()
     sys.exit()
+
 
 if __name__ == '__main__':
     DB.connect()
@@ -232,8 +246,8 @@ if __name__ == '__main__':
                         J: Search status
                         K: Delete status
                         L: Search all status 
-                        M: Filter status by string 
-                        N: Flagged Status
+                        M: Search all status updates matching a string
+                        N: Show all flagged status updates
                         Q: Quit
 
                         Please enter your choice: """)

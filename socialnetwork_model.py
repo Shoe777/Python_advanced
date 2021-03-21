@@ -20,6 +20,7 @@ class BaseModel(pw.Model):
     """
     BaseModel
     """
+
     class Meta:
         """
         Meta

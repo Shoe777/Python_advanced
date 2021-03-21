@@ -212,5 +212,11 @@ def search_all_status_updates(user_id, status_collection):
 
 
 def filter_status_by_string(text, status_collection):
+    '''
+    Filter Status by any word in database
+
+    return:
+    each status update if needed
+    '''
     all_text = status_collection.filter_status_by_string(text)
     return all_text
