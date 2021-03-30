@@ -1,0 +1,20 @@
+2021-02-03 18:14:00,811 menu.py:13  INFO menu.py testing is started.
+2021-02-03 18:14:00,811 users.py:28  INFO New user collection instance created
+2021-02-03 18:14:00,811 user_status.py:14  INFO New status collection instance created
+2021-02-03 18:14:14,453 users.py:41  INFO Add user.
+2021-02-03 18:14:14,453 users.py:41  INFO Add user.
+2021-02-03 18:14:14,453 users.py:41  INFO Add user.
+2021-02-03 18:14:42,417 user_status.py:24  INFO Add status
+2021-02-03 18:14:42,417 user_status.py:24  INFO Add status
+2021-02-03 18:14:42,417 user_status.py:24  INFO Add status
+2021-02-03 18:15:56,033 users.py:75  INFO User exist
+2021-02-03 18:16:06,604 users.py:41  INFO Add user.
+2021-02-03 18:16:35,114 user_status.py:51  INFO Status exist
+2021-02-03 18:16:46,004 user_status.py:49  ERROR Status_id does not exists
+2021-02-03 18:18:45,723 users.py:73  ERROR User_id does not exists
+2021-02-03 18:19:32,684 menu.py:13  INFO menu.py testing is started.
+2021-02-03 18:19:32,684 users.py:28  INFO New user collection instance created
+2021-02-03 18:19:32,684 user_status.py:14  INFO New status collection instance created
+2021-02-03 18:21:11,713 menu.py:13  INFO menu.py testing is started.
+2021-02-03 18:21:11,713 users.py:28  INFO New user collection instance created
+2021-02-03 18:21:11,713 user_status.py:14  INFO New status collection instance created
