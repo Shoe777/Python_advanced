@@ -6,17 +6,7 @@ social network project
 # pylint: disable=R0903
 
 import logging
-
-
-class UserStatus():
-    '''
-    Contains UserStatus information
-    '''
-
-    def __init__(self, status_id, user_id, status_text):
-        self.status_id = status_id
-        self.user_id = user_id
-        self.status_text = status_text
+import pymongo
 
 
 class UserStatusCollection():
@@ -24,55 +14,75 @@ class UserStatusCollection():
     Contains a collection of User Status objects
     '''
 
-    def __init__(self):
+    def __init__(self, _status_db):
         logging.info('New status collection instance created')
-        self.database = {}
+        self._status_db = _status_db
 
     def add_status(self, status_id, user_id, status_text):
         '''
         Adds a new status to the collection
         '''
-        if status_id in self.database:
-            # Rejects new status if status_id already exists
+        try:
+            status_ip = {"_id": status_id, "user_id": user_id,
+                         "status_text": status_text}
+            self._status_db.insert_one(status_ip)
+            logging.info("Add status")
+            # print(status_ip)
+            return True
+
+        except pymongo.errors.DuplicateKeyError:
             logging.error('Status_id is already exists')
+            print("Status_id is already exist at the database")
             return False
-        new_status = UserStatus(status_id, user_id, status_text)
-        self.database[status_id] = new_status
-        logging.info("Add status")
-        return True
 
     def modify_status(self, status_id, user_id, status_text):
         '''
         Modifies an existing status
         '''
-        if status_id not in self.database:
-            # Rejects update is the status_id does not exist
-            logging.error('Status_id does not exists')
-            return False
-        self.database[status_id].user_id = user_id
-        self.database[status_id].status_text = status_text
-        logging.info('Status modified')
-        return True
+        for status in self._status_db.find():
+            # print(status['_id'])
+            if status_id == status['_id']:
+                self._status_db.update_one({"_id": status_id}, {"$set": {
+                    "user_id": user_id, "status_text": status_text}})
+                logging.info('Status modified')
+                return True
+        logging.error('Status_id does not exists')
+        return False
 
     def delete_status(self, status_id):
         '''
         Deletes an existing status
         '''
-        if status_id not in self.database:
-            # Fails if status does not exist
-            logging.error('Status_id does not exists')
-            return False
-        del self.database[status_id]
-        logging.info('Status deleted')
-        return True
+        for status in self._status_db.find():
+            if status_id == status["_id"]:
+                query = {"_id": status_id}
+                self._status_db.delete_one(query)
+                logging.info('Status_id is deleted')
+                return True
+        logging.error('Status_id does not exists')
+        return False
+
+    def delete_status_by_user_id(self, user_id):
+        '''
+        Deletes an existing status
+        '''
+        for user in self._status_db.find():
+            if user_id == user['user_id']:
+                query = {"_id": user['_id']}
+                self._status_db.delete_many(query)
+                logging.info('Status_id is deleted')
+        logging.error('Status_id does not exists')
+        return False
 
     def search_status(self, status_id):
         '''
         Searches for status data
         '''
-        if status_id not in self.database:
-            # Fails if the status does not exist
-            logging.error('Status_id does not exists')
-            return UserStatus(None, None, None)
-        logging.info('Status exist')
-        return self.database[status_id]
+        for status in self._status_db.find():
+            # print(status['_id'])
+            if status_id == status['_id']:
+                logging.info('Status exist')
+                return status
+        logging.error('Status_id does not exists')
+        print("Status_id doesn't exist at the database")
+        return None

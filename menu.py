@@ -9,6 +9,7 @@ from datetime import datetime
 import logging
 import sys
 import main
+from mongodb import db
 
 LOG_FORMAT = "%(asctime)s %(filename)s:%(lineno)-3d %(levelname)s %(message)s"
 FILENAME_CUSTOM = datetime.now().strftime('log_%m_%d_%Y.log')
@@ -38,10 +39,10 @@ def add_user():
     Adds a new user into the database
     '''
     user_id = input('User ID: ')
-    email = input('User email: ')
     user_name = input('User name: ')
     user_last_name = input('User last name: ')
-    if not main.add_user(user_id, email, user_name, user_last_name,
+    email = input('User email: ')
+    if not main.add_user(user_id, user_name, user_last_name, email,
                          user_collection):
         print("An error occurred while trying to add new user")
     else:
@@ -53,10 +54,10 @@ def update_user():
     Updates information for an existing user
     '''
     user_id = input('User ID: ')
-    email = input('User email: ')
     user_name = input('User name: ')
     user_last_name = input('User last name: ')
-    if not main.update_user(user_id, email, user_name, user_last_name,
+    email = input('User email: ')
+    if not main.update_user(user_id, user_name, user_last_name, email,
                             user_collection):
         print("An error occurred while trying to update user")
     else:
@@ -72,10 +73,10 @@ def search_user():
     if result is None:
         print("ERROR: User does not exist")
     else:
-        print(f"User ID: {result.user_id}")
-        print(f"Email: {result.email}")
-        print(f"Name: {result.user_name}")
-        print(f"Last name: {result.user_last_name}")
+        print(f'User ID: {result["_id"]}')
+        print(f'Email: {result["user_email"]}')
+        print(f'Name: {result["user_name"]}')
+        print(f'Last name: {result["user_last_name"]}')
 
 
 def delete_user():
@@ -86,38 +87,37 @@ def delete_user():
     if not main.delete_user(user_id, user_collection):
         print("An error occurred while trying to delete user")
     else:
+        main.delete_status_by_user_id(user_id,
+                                      status_collection)
         print("User was successfully deleted")
-
-
-def save_users():
-    '''
-    Saves user database into a file
-    '''
-    filename = input('Enter filename for users file: ')
-    main.save_users(filename, user_collection)
 
 
 def add_status():
     '''
     Adds a new status into the database
     '''
-    user_id = input('User ID: ')
     status_id = input('Status ID: ')
+    user_id = input('User ID: ')
     status_text = input('Status text: ')
-    if not main.add_status(status_id, user_id, status_text, status_collection):
-        print("An error occurred while trying to add new status")
+    if main.search_user(user_id, user_collection) is not None:
+        if not main.add_status(status_id, user_id, status_text,
+                               status_collection):
+            print("An error occurred while trying to add new status")
+        else:
+            print("New status was successfully added")
     else:
-        print("New status was successfully added")
+        print("There is no associated User_id for this Status")
 
 
 def update_status():
     '''
     Updates information for an existing status
     '''
-    user_id = input('User ID: ')
     status_id = input('Status ID: ')
+    user_id = input('User ID: ')
     status_text = input('Status text: ')
-    if not main.add_status(status_id, user_id, status_text, status_collection):
+    if not main.update_status(status_id, user_id, status_text,
+                              status_collection):
         print("An error occurred while trying to update status")
     else:
         print("Status was successfully updated")
@@ -127,14 +127,14 @@ def search_status():
     '''
     Searches a status in the database
     '''
-    status_id = input('Enter status ID to search: ')
+    status_id = input('Enter Status_ID to search: ')
     result = main.search_status(status_id, status_collection)
     if result is None:
         print("ERROR: Status does not exist")
     else:
-        print(f"User ID: {result.user_id}")
-        print(f"Status ID: {result.status_id}")
-        print(f"Status text: {result.status_text}")
+        print(f"Status ID: {result['_id']}")
+        print(f"User ID: {result['user_id']}")
+        print(f"Status text: {result['status_text']}")
 
 
 def delete_status():
@@ -148,24 +148,23 @@ def delete_status():
         print("Status was successfully deleted")
 
 
-def save_status():
-    '''
-    Saves status database into a file
-    '''
-    filename = input('Enter filename for status file: ')
-    main.save_status_updates(filename, status_collection)
-
-
 def quit_program():
     '''
     Quits program
     '''
+    yorn = input("drop data?")
+    if yorn.upper == "Y":
+        UserAccounts.drop()
+        StatusUpdates.drop()
     sys.exit()
 
 
 if __name__ == '__main__':
-    user_collection = main.init_user_collection()
-    status_collection = main.init_status_collection()
+    UserAccounts = db['UserAccounts']
+    StatusUpdates = db['StatusUpdates']
+
+    user_collection = main.init_user_collection(UserAccounts)
+    status_collection = main.init_status_collection(StatusUpdates)
     MENU_OPTIONS = {
         'A': load_users,
         'B': load_status_updates,
@@ -173,12 +172,10 @@ if __name__ == '__main__':
         'D': update_user,
         'E': search_user,
         'F': delete_user,
-        'G': save_users,
         'H': add_status,
         'I': update_status,
         'J': search_status,
         'K': delete_status,
-        'L': save_status,
         'Q': quit_program
     }
     while True:
@@ -189,12 +186,10 @@ if __name__ == '__main__':
                             D: Update user
                             E: Search user
                             F: Delete user
-                            G: Save user database to file
                             H: Add status
                             I: Update status
                             J: Search status
                             K: Delete status
-                            L: Save status database to file
                             Q: Quit
 
                             Please enter your choice: """)

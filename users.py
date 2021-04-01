@@ -4,73 +4,69 @@ social network project
 '''
 
 # pylint: disable=R0903
-
 import logging
-
-class Users():
-    '''
-    Contains user information
-    '''
-
-    def __init__(self, user_id, email, user_name, user_last_name):
-        self.user_id = user_id
-        self.email = email
-        self.user_name = user_name
-        self.user_last_name = user_last_name
+import pymongo
 
 
 class UserCollection():
-    '''
+    """
     Contains a collection of Users objects
-    '''
+    """
 
-    def __init__(self):
+    def __init__(self, _users_db):
         logging.info('New user collection instance created')
-        self.database = {}
+        self._users_db = _users_db
 
-    def add_user(self, user_id, email, user_name, user_last_name):
+    def add_user(self, user_id, user_name, user_last_name, email):
         '''
         Adds a new user to the collection
         '''
-        if user_id in self.database:
-            logging.error('User_id is already exists')
-            # Rejects new status if status_id already exists
+        try:
+            users_ip = {"_id": user_id, "user_name": user_name,
+                        "user_last_name": user_last_name, "user_email": email}
+            self._users_db.insert_one(users_ip)
+            # print(users_ip)
+            # print("TOTAL DOCS:", self._users_db.count_documents({}))
+            return True
+
+        except pymongo.errors.DuplicateKeyError:
+            print("User_id is already exist at the database")
             return False
-        new_user = Users(user_id, email, user_name, user_last_name)
-        self.database[user_id] = new_user
-        logging.info("Add user.")
-        return True
 
     def modify_user(self, user_id, email, user_name, user_last_name):
         '''
         Modifies an existing user
         '''
-        if user_id not in self.database:
-            logging.error('User_id does not exists')
-            return False
-        self.database[user_id].email = email
-        self.database[user_id].user_name = user_name
-        self.database[user_id].user_last_name = user_last_name
-        logging.info('User modified')
-        return True
+        for user in self._users_db.find():
+            if user_id == user["_id"]:
+                self._users_db.update_one({"_id": user_id}, {"$set": {
+                    "user_email": email, "user_name": user_name,
+                    "user_last_name": user_last_name}})
+                logging.info('User modified')
+                return True
+        logging.error('User_id does not exists')
+        return False
 
     def delete_user(self, user_id):
         '''
         Deletes an existing user
         '''
-        if user_id not in self.database:
-            logging.error('User_id does not exists')
-            return False
-        del self.database[user_id]
-        logging.info('User deleted')
-        return True
+        for user in self._users_db.find():
+            if user_id == user["_id"]:
+                query = {"_id": user_id}
+                self._users_db.delete_one(query)
+                logging.info('User deleted')
+                return True
+        logging.error('User_id does not exists')
+        return False
 
     def search_user(self, user_id):
         '''
         Searches for user data
         '''
-        if user_id not in self.database:
-            logging.error('User_id does not exists')
-            return Users(None, None, None, None)
-        logging.info('User exist')
-        return self.database[user_id]
+        for user in self._users_db.find():
+            # print(user['_id'])
+            if user_id == user['_id']:
+                return user
+        print("User_id doesn't exist at the database")
+        return None

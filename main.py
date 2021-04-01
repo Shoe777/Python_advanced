@@ -8,21 +8,21 @@ import users
 import user_status
 
 
-def init_user_collection():
+def init_user_collection(users_db):
     '''
     Creates and returns a new instance
     of UserCollection
     '''
-    new_uc = users.UserCollection()
+    new_uc = users.UserCollection(users_db)
     return new_uc
 
 
-def init_status_collection():
+def init_status_collection(status_db):
     '''
     Creates and returns a new instance
     of UserStatusCollection
     '''
-    new_usc = user_status.UserStatusCollection()
+    new_usc = user_status.UserStatusCollection(status_db)
     return new_usc
 
 
@@ -51,41 +51,15 @@ def load_users(filename, user_collection):
             if any(not x.strip() for x in row):  # check for empty cells
                 errors = True
                 continue
-            user_id, email, user_name, user_last_name = row  # unpack
-            if user_id in user_collection.database:
-                print('user_id is already exist')
+            user_id, user_name, user_last_name, email = row  # unpack
+            created = user_collection.add_user(user_id, user_name,
+                                               user_last_name, email)
+            if not created:
+                # print('user_id is already exist')
                 errors = True
                 continue
-            user_collection.add_user(user_id, email, user_name, user_last_name)
+
         return not errors
-
-
-def save_users(filename, user_collection):
-    '''
-    Saves all users in user_collection into
-    a CSV file
-
-    Requirements:
-    - If there is an existing file, it will
-    overwrite it.
-    - Returns False if there are any errors
-    (such an invalid filename).
-    - Otherwise, it returns True.
-    '''
-    errors = False
-    fields = ['USER_ID', 'EMAIL', 'NAME', 'LASTNAME']
-    if filename.lower().endswith('.csv'):
-        with open(filename, 'w') as writer:
-            wtr = csv.writer(writer, lineterminator='\n')
-            wtr.writerow(fields)
-            for user in user_collection.database:
-                data = user_collection.database[user]
-                values = [data.user_id, data.email, data.user_name,
-                          data.user_last_name]
-                wtr.writerow(values)
-    else:
-        errors = True
-    return not errors
 
 
 def load_status_updates(filename, status_collection):
@@ -115,42 +89,19 @@ def load_status_updates(filename, status_collection):
                 continue
 
             status_id, user_id, status_text = row  # unpack
-            if status_id in status_collection.database:
-                print('status_id is already exist')
+            created = status_collection.add_status(status_id, user_id,
+                                                   status_text)
+            if not created:
+                print(
+                    "Status_id can't be uploaded because user_id doesn't "
+                    "exist at 'Users' Table")
                 errors = True
                 continue
-            status_collection.add_status(status_id, user_id, status_text)
+
         return not errors
 
 
-def save_status_updates(filename, status_collection):
-    '''
-    Saves all statuses in status_collection into
-    a CSV file
-
-    Requirements:
-    - If there is an existing file, it will
-    overwrite it.
-    - Returns False if there are any errors
-    (such an invalid filename).
-    - Otherwise, it returns True.
-    '''
-    errors = False
-    fields = ['STATUS_ID', 'USER_ID', 'STATUS_TEXT']
-    if filename.lower().endswith('.csv'):
-        with open(filename, 'w') as writer:
-            wtr = csv.writer(writer, lineterminator='\n')
-            wtr.writerow(fields)
-            for status in status_collection.database:
-                data = status_collection.database[status]
-                values = [data.status_id, data.user_id, data.status_text]
-                wtr.writerow(values)
-    else:
-        errors = True
-    return not errors
-
-
-def add_user(user_id, email, user_name, user_last_name, user_collection):
+def add_user(user_id, user_name, user_last_name, email, user_collection):
     '''
     Creates a new instance of User and stores it in user_collection
     (which is an instance of UserCollection)
@@ -161,10 +112,10 @@ def add_user(user_id, email, user_name, user_last_name, user_collection):
     user_collection.add_user() returns False).
     - Otherwise, it returns True.
     '''
-    return user_collection.add_user(user_id, email, user_name, user_last_name)
+    return user_collection.add_user(user_id, user_name, user_last_name, email)
 
 
-def update_user(user_id, email, user_name, user_last_name, user_collection):
+def update_user(user_id, user_name, user_last_name, email, user_collection):
     '''
     Updates the values of an existing user
 
@@ -198,9 +149,7 @@ def search_user(user_id, user_collection):
     - Otherwise, it returns None.
     '''
     user = user_collection.search_user(user_id)
-    if user.user_id is not None:
-        return user
-    return None
+    return user
 
 
 def add_status(status_id, user_id, status_text, status_collection):
@@ -239,6 +188,13 @@ def delete_status(status_id, status_collection):
     return status_collection.delete_status(status_id)
 
 
+def delete_status_by_user_id(user_id, status_collection):
+    '''
+    Deletes a status_id from user_collection by user_id.
+    '''
+    return status_collection.delete_status_by_user_id(user_id)
+
+
 def search_status(status_id, status_collection):
     '''
     Searches for a status in status_collection
@@ -249,6 +205,4 @@ def search_status(status_id, status_collection):
     - Otherwise, it returns None.
     '''
     status = status_collection.search_status(status_id)
-    if status.status_id is not None:
-        return status
-    return None
+    return status
