@@ -6,6 +6,7 @@ Provides a basic frontend
 # Disable only for names "user_collection" and "status_collection"
 
 from timeit import timeit as timer
+import time
 from datetime import datetime
 import logging
 import sys
@@ -18,16 +19,18 @@ logging.basicConfig(level=logging.INFO, format=LOG_FORMAT,
                     filename=FILENAME_CUSTOM)
 logging.info("menu.py testing is started.")
 
-repetitions = 1000
+# repetitions = 1000
 
 def load_users():
     '''
     Loads user accounts from a file
     '''
     filename = input('Enter filename of user file: ')
-    main.load_users(filename, user_collection)
-    print("time for load users")
-    print(timer('load_users', globals=globals(), number=repetitions))
+    tic = time.perf_counter()
+    main.load_users(filename)
+    toc = time.perf_counter()
+    print(f"time for load users in {toc-tic:0.4f} second")
+    # print(timer('load_users', globals=globals(), number=repetitions))
 
 
 def load_status_updates():
@@ -35,9 +38,11 @@ def load_status_updates():
     Loads status updates from a file
     '''
     filename = input('Enter filename for status file: ')
-    main.load_status_updates(filename, status_collection)
-    print("time for load status updates")
-    print(timer('load_status_updates', globals=globals(), number=repetitions))
+    tic = time.perf_counter()
+    main.load_status_updates(filename)
+    toc = time.perf_counter()
+    print(f"time for load status in {toc-tic:0.4f} second")
+
 
 def add_user():
     '''
@@ -52,9 +57,6 @@ def add_user():
         print("An error occurred while trying to add new user")
     else:
         print("User was successfully added")
-    print("time for add user")
-    print(timer('add_user', globals=globals(), number=repetitions))
-
 
 
 def update_user():
@@ -65,13 +67,14 @@ def update_user():
     user_name = input('User name: ')
     user_last_name = input('User last name: ')
     email = input('User email: ')
+    tic = time.perf_counter()
     if not main.update_user(user_id, user_name, user_last_name, email,
                             user_collection):
         print("An error occurred while trying to update user")
     else:
         print("User was successfully updated")
-    print("time for update user")
-    print(timer('update_user', globals=globals(), number=repetitions))
+    toc = time.perf_counter()
+    print(f"time for user update in {toc-tic:0.4f} second")
 
 
 def search_user():
@@ -79,6 +82,7 @@ def search_user():
     Searches a user in the database
     '''
     user_id = input('Enter user ID to search: ')
+    tic = time.perf_counter()
     result = main.search_user(user_id, user_collection)
     if result is None:
         print("ERROR: User does not exist")
@@ -87,8 +91,8 @@ def search_user():
         print(f'Email: {result["user_email"]}')
         print(f'Name: {result["user_name"]}')
         print(f'Last name: {result["user_last_name"]}')
-    print("time for search user")
-    print(timer('search_user', globals=globals(), number=repetitions))
+    toc = time.perf_counter()
+    print(f"time for search user is {toc-tic:0.4f} second")
 
 
 def delete_user():
@@ -102,8 +106,7 @@ def delete_user():
         main.delete_status_by_user_id(user_id,
                                       status_collection)
         print("User was successfully deleted")
-    print("time for delete user")
-    print(timer('delete_user', globals=globals(), number=repetitions))
+
 
 def add_status():
     '''
@@ -112,6 +115,7 @@ def add_status():
     status_id = input('Status ID: ')
     user_id = input('User ID: ')
     status_text = input('Status text: ')
+    tic = time.perf_counter()
     if main.search_user(user_id, user_collection) is not None:
         if not main.add_status(status_id, user_id, status_text,
                                status_collection):
@@ -120,8 +124,9 @@ def add_status():
             print("New status was successfully added")
     else:
         print("There is no associated User_id for this Status")
-    print("time for add status")
-    print(timer('add_status', globals=globals(), number=repetitions))
+    toc = time.perf_counter()
+    print(f"time to add status is {toc-tic:0.4f} second")
+
 
 def update_status():
     '''
@@ -135,14 +140,14 @@ def update_status():
         print("An error occurred while trying to update status")
     else:
         print("Status was successfully updated")
-    print("time for update status")
-    print(timer('update_status', globals=globals(), number=repetitions))
+
 
 def search_status():
     '''
     Searches a status in the database
     '''
     status_id = input('Enter Status_ID to search: ')
+    tic = time.perf_counter()
     result = main.search_status(status_id, status_collection)
     if result is None:
         print("ERROR: Status does not exist")
@@ -150,8 +155,8 @@ def search_status():
         print(f"Status ID: {result['_id']}")
         print(f"User ID: {result['user_id']}")
         print(f"Status text: {result['status_text']}")
-    print("time for search status")
-    print(timer('search_status', globals=globals(), number=repetitions))
+    toc = time.perf_counter()
+    print(f"time to search status is {toc-tic:0.4f} second")
 
 def delete_status():
     '''
@@ -162,17 +167,17 @@ def delete_status():
         print("An error occurred while trying to delete status")
     else:
         print("Status was successfully deleted")
-    print("time for delete status")
-    print(timer('delete_status', globals=globals(), number=repetitions))
+
 
 def quit_program():
     '''
     Quits program
     '''
-    # yorn = input("drop data?")
-    # if yorn.upper == "Y":
-    #     UserAccounts.drop()
-    #     StatusUpdates.drop()
+    yorn = input("drop DB? (y/n)")
+    if yorn.upper == "Y":
+        DB.drop_database('UserAccounts')
+        DB.drop_database('StatusUpdates')
+        # StatusUpdates.drop()
     sys.exit()
 
 

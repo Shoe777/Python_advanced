@@ -3,9 +3,12 @@ Functions to add/delete/modified and so on
 information for the social network project
 '''
 
-import csv
+import pandas as pd
 import users
 import user_status
+import multiprocessing
+from mongodb import DB
+import concurrent.futures
 
 
 def init_user_collection(users_db):
@@ -26,79 +29,71 @@ def init_status_collection(status_db):
     return new_usc
 
 
-def load_users(filename, user_collection):
+def load_users(filename, size=300):
     '''
-    Opens a CSV file with user data and
-    adds it to an existing instance of
-    UserCollection
-
-    Requirements:
-    - If a user_id already exists, it
-    will ignore it and continue to the
-    next.
-    - Returns False if there are any errors
-    (such as empty fields in the source CSV file)
-    - Otherwise, it returns True.
+    Imports CSV file in chunks of a defined size
     '''
-    errors = False
-    with open(filename, newline='') as csv_accounts:
-        accounts_reader = csv.reader(csv_accounts)
-        next(accounts_reader)  # ignoring header
-        for row in accounts_reader:
-            if len(row) < 4:  # check for empty rows
-                errors = True
-                continue
-            if any(not x.strip() for x in row):  # check for empty cells
-                errors = True
-                continue
-            user_id, user_name, user_last_name, email = row  # unpack
-            created = user_collection.add_user(user_id, user_name,
-                                               user_last_name, email)
-            if not created:
-                # print('user_id is already exist')
-                errors = True
-                continue
-
-        return not errors
+    cpu = multiprocessing.cpu_count()
+    print(f'Number of cpu is: {cpu}')
+    chunks = [chunk for chunk in pd.read_csv(filename, chunksize=size,
+                                             iterator=True)]
+    chunk_number = [i for i in range(len(chunks))]
+    print('Starting workers')
+    with concurrent.futures.ProcessPoolExecutor(max_workers=6) as executor:
+        for chunk_idx, result in zip(chunk_number,
+                                     executor.map(worker1,
+                                                  zip(chunks, chunk_number))):
+            print(f"CHUNK {chunk_idx}")
+            print(f"CHUNK {result}")
+            executor.shutdown(wait=True)
+            print('Done')
 
 
-def load_status_updates(filename, status_collection):
+def worker1(pair):
+    chunk, idx = pair
+    UserAccounts = DB['UserAccounts']
+    user_collection = init_user_collection(UserAccounts)
+    for index, row in chunk.iterrows():
+        user_id = row['USER_ID']
+        user_name = row['NAME']
+        user_last_name = row['LASTNAME']
+        email = row['EMAIL']  # unpack
+        created = user_collection.add_user(user_id, user_name,
+                                           user_last_name, email)
+        if not created:
+            print('user_id is already exist')
+            continue
+
+
+def load_status_updates(filename, size=25000):
     '''
-    Opens a CSV file with status data and
-    adds it to an existing instance of
-    UserStatusCollection
-
-    Requirements:
-    - If a status_id already exists, it
-    will ignore it and continue to the
-    next.
-    - Returns False if there are any errors
-    (such as empty fields in the source CSV file)
-    - Otherwise, it returns True.
+    Imports CSV file in chunks of a defined size
     '''
-    errors = False
-    with open(filename, newline='') as csv_status_upd:
-        status_reader = csv.reader(csv_status_upd, delimiter=',')
-        next(status_reader)  # ignoring header
-        for row in status_reader:
-            if len(row) < 3:  # check for empty rows
-                errors = True
-                continue
-            if any(not x.strip() for x in row):  # check for empty cells
-                errors = True
-                continue
+    chunks = [chunk for chunk in pd.read_csv(filename, chunksize=size,
+                                             iterator=True)]
+    chunk_number = [i for i in range(len(chunks))]
+    print('Starting workers')
+    with concurrent.futures.ProcessPoolExecutor(max_workers=8) as executor:
+        for chunk_idx, result in zip(chunk_number,
+                                     executor.map(worker2, zip(chunks,
+                                                               chunk_number))):
+            print(f"CHUNK {chunk_idx}")
+            executor.shutdown(wait=True)
+            print('Done')
 
-            status_id, user_id, status_text = row  # unpack
-            created = status_collection.add_status(status_id, user_id,
-                                                   status_text)
-            if not created:
-                print(
-                    "Status_id can't be uploaded because user_id doesn't "
-                    "exist at 'Users' Table")
-                errors = True
-                continue
 
-        return not errors
+def worker2(pair):
+    chunk, idx = pair
+    StatusUpdates = DB['StatusUpdates']
+    status_collection = init_status_collection(StatusUpdates)
+    for index, row in chunk.iterrows():
+        status_id = row['STATUS_ID']
+        user_id = row['USER_ID']
+        status_text = row['STATUS_TEXT']
+        created = status_collection.add_status(status_id, user_id, status_text)
+        if not created:
+            print('user_id is already exist')
+            continue
 
 
 def add_user(user_id, user_name, user_last_name, email, user_collection):

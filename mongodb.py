@@ -27,4 +27,6 @@ MONGO = MongoDBConnection()
 
 with MONGO:
     # mongodb database; it all starts here
-    DB = MONGO.connection.MyDataBase
+
+    DB = MONGO.connection.MyDataBase_new
+
