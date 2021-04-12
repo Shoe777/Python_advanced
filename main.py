@@ -2,67 +2,60 @@
 Functions to add/delete/modified and so on
 information for the social network project
 '''
+# pylint: disable=W0614
+# pylint: disable=W0212
+# pylint: disable=W0401
 
-import csv
+from peewee import *
 import users
 import user_status
 
 
-def init_user_collection(users_db):
+def init_user_collection(users_table):
     '''
     Creates and returns a new instance
     of UserCollection
     '''
-    new_uc = users.UserCollection(users_db)
+    new_uc = users.UserCollection(users_table)
     return new_uc
 
 
-def init_status_collection(status_db):
+def init_status_collection(status_table, user_collection):
     '''
     Creates and returns a new instance
     of UserStatusCollection
     '''
-    new_usc = user_status.UserStatusCollection(status_db)
+    new_usc = user_status.UserStatusCollection(status_table, user_collection)
     return new_usc
 
 
 def load_users(filename, user_collection):
     '''
-    Opens a CSV file with user data and
-    adds it to an existing instance of
-    UserCollection
+Opens a CSV file with user data and
+adds it to an existing instance of
+UserCollection
 
-    Requirements:
-    - If a user_id already exists, it
-    will ignore it and continue to the
-    next.
-    - Returns False if there are any errors
-    (such as empty fields in the source CSV file)
-    - Otherwise, it returns True.
-    '''
-    errors = False
-    with open(filename, newline='') as csv_accounts:
-        accounts_reader = csv.reader(csv_accounts)
-        next(accounts_reader)  # ignoring header
-        for row in accounts_reader:
-            if len(row) < 4:  # check for empty rows
-                errors = True
-                continue
-            if any(not x.strip() for x in row):  # check for empty cells
-                errors = True
-                continue
-            user_id, email, user_name, user_last_name = row  # unpack
-            created = user_collection.add_user(user_id, email, user_name,
-                                               user_last_name)
-            if not created:
-                print('user_id is already exist')
-                errors = True
-                continue
-
-        return not errors
+Requirements:
+- If a user_id already exists, it
+will ignore it and continue to the
+next.
+- Returns False if there are any errors
+(such as empty fields in the source CSV file)
+- Otherwise, it returns True.
+'''
+    table = user_collection._users_db
+    table.insert(USER_ID='test')
+    table.create_index(['USER_ID'], unique=True)
+    table.delete(USER_ID='test')
+    try:
+        table.thaw(filename=filename, format='csv')
+    except IntegrityError:
+        print(f"issues with {filename}: User_id is already "
+              f"exist")
+    # table.all()[:4]
 
 
-def load_status_updates(filename, status_collection):
+def load_status_updates(filename, status_collection, user_collection):
     '''
     Opens a CSV file with status data and
     adds it to an existing instance of
@@ -76,29 +69,20 @@ def load_status_updates(filename, status_collection):
     (such as empty fields in the source CSV file)
     - Otherwise, it returns True.
     '''
-    errors = False
-    with open(filename, newline='') as csv_status_upd:
-        status_reader = csv.reader(csv_status_upd, delimiter=',')
-        next(status_reader)  # ignoring header
-        for row in status_reader:
-            if len(row) < 3:  # check for empty rows
-                errors = True
+    s_table = status_collection._status_db
+    s_table.insert(STATUS_ID='test')
+    s_table.create_index(['STATUS_ID'], unique=True)
+    s_table.delete(STATUS_ID='test')
+    try:
+        s_table.thaw(filename=filename, format='csv')
+        for row in s_table:
+            if user_collection.search_user(row['USER_ID']):
                 continue
-            if any(not x.strip() for x in row):  # check for empty cells
-                errors = True
-                continue
-
-            status_id, user_id, status_text = row  # unpack
-            created = status_collection.add_status(status_id, user_id,
-                                                   status_text)
-            if not created:
-                print("Status_id can't be uploaded because user_id doesn't "
-                      "exist at 'Users' Table")
-                errors = True
-                continue
-
-        return not errors
-
+            status_collection.delete_status(row['STATUS_ID'])
+    except IntegrityError:
+        print(f"issues with {filename}: Status_id is already "
+              f"exist")
+    # s_table.all()[:3]
 
 def add_user(user_id, email, user_name, user_last_name, user_collection):
     '''

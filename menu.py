@@ -5,12 +5,11 @@ Provides a basic frontend
 # pylint: disable=C0103
 # Disable only for names "user_collection" and "status_collection"
 
-from timeit import timeit as timer
 from datetime import datetime
 import logging
 import sys
+from playhouse.dataset import DataSet
 import main
-from socialnetwork_model import DB, UsersTable, StatusTable
 
 LOG_FORMAT = "%(asctime)s %(filename)s:%(lineno)-3d %(levelname)s %(message)s"
 FILENAME_CUSTOM = datetime.now().strftime('log_%m_%d_%Y.log')
@@ -18,25 +17,28 @@ logging.basicConfig(level=logging.INFO, format=LOG_FORMAT,
                     filename=FILENAME_CUSTOM)
 logging.info("menu.py testing is started.")
 
-repetitions = 1000
 
 def load_users():
     '''
     Loads user accounts from a file
     '''
+    # filename = '1.csv'
     filename = input('Enter filename of user file: ')
     main.load_users(filename, user_collection)
-    print("time for load users")
-    print(timer('load_users', globals=globals(), number=repetitions))
+    # for user in user_collection._users_db:
+    #     print(user)
+
 
 def load_status_updates():
     '''
     Loads status updates from a file
     '''
+    # filename = '2.csv'
     filename = input('Enter filename for status file: ')
-    main.load_status_updates(filename, status_collection)
-    print("time for load status updates")
-    print(timer('load_status_updates', globals=globals(), number=repetitions))
+    main.load_status_updates(filename, status_collection, user_collection)
+    # for status in status_collection._status_db:
+    #     print(status)
+
 
 def add_user():
     '''
@@ -48,11 +50,11 @@ def add_user():
     user_last_name = input('User last name: ')
     if not main.add_user(user_id, email, user_name, user_last_name,
                          user_collection):
-        print("An error occurred while trying to add new user")
+        print("An error occurred while trying to add new user. User_id is "
+              "already exist")
     else:
         print("User was successfully added")
-    print("time for add user")
-    print(timer('add_user', globals=globals(), number=repetitions))
+
 
 def update_user():
     '''
@@ -64,11 +66,11 @@ def update_user():
     user_last_name = input('User last name: ')
     if not main.update_user(user_id, email, user_name, user_last_name,
                             user_collection):
-        print("An error occurred while trying to update user")
+        print("An error occurred while trying to update user. There is no such"
+              "User Id at database")
     else:
         print("User was successfully updated")
-    print("time for update user")
-    print(timer('update_user', globals=globals(), number=repetitions))
+
 
 def search_user():
     '''
@@ -79,12 +81,11 @@ def search_user():
     if result is None:
         print("ERROR: User does not exist")
     else:
-        print(f"User ID: {result.user_id}")
-        print(f"Email: {result.user_email}")
-        print(f"Name: {result.user_name}")
-        print(f"Last name: {result.user_last_name}")
-    print("time for search user")
-    print(timer('search_user', globals=globals(), number=repetitions))
+        print(f"User ID: {result['USER_ID']}")
+        print(f"Email: {result['EMAIL']}")
+        print(f"Name: {result['NAME']}")
+        print(f"Last name: {result['LASTNAME']}")
+
 
 def delete_user():
     '''
@@ -92,40 +93,39 @@ def delete_user():
     '''
     user_id = input('User ID: ')
     if not main.delete_user(user_id, user_collection):
-        print("An error occurred while trying to delete user")
+        print("An error occurred while trying to delete user. There is no such"
+              "User Id at database")
     else:
         print("User was successfully deleted")
-    print("time for delete user")
-    print(timer('delete_user', globals=globals(), number=repetitions))
+
 
 def add_status():
     '''
     Adds a new status into the database
     '''
-    user_id = input('User ID: ')
     status_id = input('Status ID: ')
+    user_id = input('User ID: ')
     status_text = input('Status text: ')
+
     if not main.add_status(status_id, user_id, status_text, status_collection):
         print("An error occurred while trying to add new status")
     else:
         print("New status was successfully added")
-    print("time for add status")
-    print(timer('add_status', globals=globals(), number=repetitions))
+
 
 def update_status():
     '''
     Updates information for an existing status
     '''
-    user_id = input('User ID: ')
     status_id = input('Status ID: ')
+    user_id = input('User ID: ')
     status_text = input('Status text: ')
-    if not main.add_status(status_id, user_id, status_text,
-                           status_collection):
+    if not main.update_status(status_id, user_id, status_text,
+                              status_collection):
         print("An error occurred while trying to update status")
     else:
         print("Status was successfully updated")
-    print("time for update status")
-    print(timer('update_status', globals=globals(), number=repetitions))
+
 
 def search_status():
     '''
@@ -136,11 +136,10 @@ def search_status():
     if result is None:
         print("ERROR: Status does not exist")
     else:
-        print(f"User ID: {result.user_id}")
-        print(f"Status ID: {result.status_id}")
-        print(f"Status text: {result.status_text}")
-    print("time for search status")
-    print(timer('search_status', globals=globals(), number=repetitions))
+        print(f"User ID: {result['USER_ID']}")
+        print(f"Status ID: {result['STATUS_ID']}")
+        print(f"Status text: {result['STATUS_TEXT']}")
+
 
 def delete_status():
     '''
@@ -151,8 +150,7 @@ def delete_status():
         print("An error occurred while trying to delete status")
     else:
         print("Status was successfully deleted")
-    print("time for delete status")
-    print(timer('delete_status', globals=globals(), number=repetitions))
+
 
 def quit_program():
     '''
@@ -163,12 +161,14 @@ def quit_program():
 
 
 if __name__ == '__main__':
-    DB.connect()
-    DB.execute_sql('PRAGMA foreign_keys = ON;')
-    DB.create_tables([UsersTable, StatusTable])
+    DB = DataSet('sqlite:///:memory:')
+    USERS_TABLE = DB['UsersTable']
+    STATUS_TABLE = DB['StatusTable']
 
-    user_collection = main.init_user_collection(UsersTable)
-    status_collection = main.init_status_collection(StatusTable)
+    user_collection = main.init_user_collection(USERS_TABLE)
+    status_collection = main.init_status_collection(STATUS_TABLE,
+                                                    user_collection)
+
     MENU_OPTIONS = {
         'A': load_users,
         'B': load_status_updates,

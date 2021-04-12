@@ -4,68 +4,64 @@ social network project
 '''
 
 # pylint: disable=W0703
+# pylint: disable=W0614
+# pylint: disable=W0401
+
+from peewee import *
+
 
 class UserCollection():
     '''
     Contains a collection of Users objects
     '''
 
-    def __init__(self, users_db):
-        self._users_db = users_db
+    def __init__(self, USERS_TABLE):
+        self._users_db = USERS_TABLE
 
-    def add_user(self, user_id, email, user_name, user_last_name):
+    def add_user(self, user_id, user_name, user_last_name, email):
         '''
         Adds a new user to the collection
         '''
         try:
-            new_user = self._users_db.create(user_id=user_id,
-                                             user_name=user_name,
-                                             user_last_name=user_last_name,
-                                             user_email=email)
-            new_user.save()
+            if len(user_id) > 30 or len(user_name) > 30 or len(
+                    user_last_name) > 100:
+                print('Exceed limitation')
+                return False
+            # self._users_db.insert(USER_ID='test')
+            # self._users_db.create_index(['USER_ID'], unique=True)
+            # self._users_db.delete(USER_ID='test')
+            self._users_db.insert(USER_ID=user_id, NAME=user_name,
+                                  LASTNAME=user_last_name,
+                                  EMAIL=email)
             return True
-        except Exception as exep:
-            print(exep)
+        except IntegrityError:
+            print("User_id is already exist at the database")
             return False
 
     def modify_user(self, user_id, email, user_name, user_last_name):
         '''
         Modifies an existing user
         '''
-        try:
-            user = self._users_db.get(self._users_db.user_id == user_id)
 
-            user.user_email = email
-            user.user_name = user_name
-            user.user_last_name = user_last_name
-            user.save()
-            return True
-        except Exception as exep:
-            print(exep)
+        if self._users_db.find_one(USER_ID=user_id) is None:
             return False
+        self._users_db.update(USER_ID=user_id, NAME=user_name,
+                              LASTNAME=user_last_name,
+                              EMAIL=email, columns=['USER_ID'])
+        return True
 
     def delete_user(self, user_id):
         '''
         Deletes an existing user
         '''
-        try:
-            user = self._users_db.get(self._users_db.user_id == user_id)
-            user.delete_instance()
-            return True
-        except Exception as exep:
-            print(exep)
+        if self._users_db.find_one(USER_ID=user_id) is None:
             return False
+        self._users_db.delete(USER_ID=user_id)
+        return True
 
     def search_user(self, user_id):
         '''
         Searches for user data
         '''
-        try:
-            user = self._users_db.get(self._users_db.user_id == user_id)
-            return user
-        except Exception as exep:
-            print(exep)
-            return None
-        # except IntegrityError:
-        #     print("user_id doesn't not exist")
-        #     return None
+        user = self._users_db.find_one(USER_ID=user_id)
+        return user

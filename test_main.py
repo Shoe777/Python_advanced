@@ -6,19 +6,14 @@
 Test File
 '''
 from unittest import TestCase
-from peewee import *
 import user_status as US
 import users as U
-from socialnetwork_model import UsersTable, StatusTable
+from playhouse.dataset import DataSet
 
-# Create an empty Databse
-MODELS = [UsersTable, StatusTable]
-TEST_DB = SqliteDatabase(':memory:')
-# Bind model classes to test db. Since we have a complete list of all
-# models, we do not need to recursively bind dependencies.
-TEST_DB.bind(MODELS, bind_refs=False, bind_backrefs=False)
-TEST_DB.connect()
-TEST_DB.create_tables(MODELS)
+# Create an empty Database
+DB = DataSet('sqlite:///:memory:')
+USERS_TABLE = DB['UsersTable']
+STATUS_TABLE = DB['StatusTable']
 
 
 def _is_empty_user(user):  # Will return None
@@ -32,9 +27,14 @@ class UsersTests(TestCase):
 
     def setUp(self):  # setUp is called before each individual test
         print("Test of function from users.py")
-        self.new_uc = U.UserCollection(UsersTable)
-        self.new_uc.add_user('alex', 'a@a', 'alex_name',
-                             'alex_last_name')  # create known db
+        self.new_uc = U.UserCollection(USERS_TABLE)
+        table = U.UserCollection(USERS_TABLE)._users_db
+        table.insert(USER_ID='test')
+        table.create_index(['USER_ID'], unique=True)
+        table.delete(USER_ID='test')
+        self.new_uc.add_user('alex', 'alex_name',
+                             'alex_last_name', 'a@a')  # create known db
+        # print(self.new_uc['USER_ID'])
 
     def tearDown(self):  # tearDown is called after every test
         print("End of test for function from users.py")
@@ -58,7 +58,7 @@ class UsersTests(TestCase):
         expected = ('alex_last_name')
         # check if the search_user function return user_last_name
         user_data = self.new_uc.search_user('alex')
-        self.assertEqual(user_data.user_last_name, expected)
+        self.assertEqual(user_data['LASTNAME'], expected)
 
     def test_search_user_absent(self):
         expected = None
@@ -73,7 +73,7 @@ class UsersTests(TestCase):
                                                  'alex_last_name'), expected)
         # check that user_email is modified
         user_data = self.new_uc.search_user('alex')
-        self.assertEqual(user_data.user_email, 'new@a')
+        self.assertEqual(user_data['EMAIL'], 'new@a')
 
     def test_modify_user_absent(self):
         expected = False
@@ -90,9 +90,14 @@ class UsersTests(TestCase):
 
     def test_add_user_fail(self):
         # Test if user_id is already exist
+        # user_data = self.new_uc.search_user('alex')
+        # print(f" See user data {user_data}")
         expected = False
-        self.assertEqual(self.new_uc.add_user('alex', 'z@gmail', 'zzz_name',
-                                              'zzz_last_name'), expected)
+        self.assertFalse(_is_empty_user(self.new_uc.search_user('alex')))
+        # user_data = self.new_uc.search_user('alex')
+        # print(f" AAA user data {user_data}")
+        self.assertEqual(self.new_uc.add_user('alex', 'alex', 'alex', 'alex'),
+                         expected)
 
 
 def _is_empty_status(status):  # Will return None
@@ -106,9 +111,21 @@ class UsersStatusTests(TestCase):
 
     def setUp(self):  # setUp is called before each individual test
         print("Test of function from user_status.py")
-        self.new_usc = US.UserStatusCollection(StatusTable)
+        self.new_uc = U.UserCollection(USERS_TABLE)
+        table = U.UserCollection(USERS_TABLE)._users_db
+        table.insert(USER_ID='test')
+        table.create_index(['USER_ID'], unique=True)
+        table.delete(USER_ID='test')
+        self.new_uc.add_user('alex', 'alex_name',
+                             'alex_last_name', 'a@a')  # create known db
+        # print(self.new_uc['USER_ID'])
+        self.new_usc = US.UserStatusCollection(STATUS_TABLE, self.new_uc)
+        s_table = US.UserStatusCollection(STATUS_TABLE, U)._status_db
+        s_table.insert(STATUS_ID='test')
+        s_table.create_index(['STATUS_ID'], unique=True)
+        s_table.delete(STATUS_ID='test')
         self.new_usc.add_status('alex01', 'alex', 'Congratulation')
-        self.new_usc.add_status('alex02', 'alex02', 'Hello')  #
+        self.new_usc.add_status('alex02', 'alex', 'Hello')  #
         # create new known Table
 
     def tearDown(self):  # tearDown is called after every test
@@ -135,7 +152,7 @@ class UsersStatusTests(TestCase):
         expected = 'Congratulation'
         # check if the search_status function return status_text
         status_data = self.new_usc.search_status('alex01')
-        self.assertEqual(status_data.status_text, expected)
+        self.assertEqual(status_data['STATUS_TEXT'], expected)
 
     def test_search_status_absent(self):
         expected = None
@@ -153,7 +170,7 @@ class UsersStatusTests(TestCase):
             expected)
         # check that Status_text is modified
         status_data = self.new_usc.search_status('alex02')
-        self.assertEqual(status_data.status_text, 'Double Hello')
+        self.assertEqual(status_data['STATUS_TEXT'], 'Double Hello')
 
     def test_modify_status_absent(self):
         expected = False
@@ -166,7 +183,7 @@ class UsersStatusTests(TestCase):
         self.assertTrue(_is_empty_status(self.new_usc.search_status(
             'zzz01')))
         self.assertEqual(
-            self.new_usc.add_status('zzz01', 'zzzz', 'Nice Congratulation'),
+            self.new_usc.add_status('zzz01', 'alex', 'Nice Congratulation'),
             expected)
         # check there is new status_id 'zzz01' in the data base
         self.assertFalse(_is_empty_status(self.new_usc.search_status('zzz01')))
@@ -174,6 +191,7 @@ class UsersStatusTests(TestCase):
     def test_add_status_fail(self):
         # Test if status_id is already exist
         expected = False
-        self.assertEqual(
-            self.new_usc.add_status('alex01', 'zzzz', 'Congratulation'),
-            expected)
+        self.assertFalse(_is_empty_status(self.new_usc.search_status(
+            'alex02')))
+        self.assertEqual(self.new_usc.add_status('alex02', 'alex',
+                                                 'Congrats'), expected)
