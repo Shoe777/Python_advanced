@@ -30,6 +30,7 @@ class UserStatusCollection():
                                        STATUS_TEXT=status_text)
                 return True
             print("There is no corresponding User_id in database")
+            return False
         except IntegrityError:
             print("Status_id is already exist at the database")
             return False

@@ -90,13 +90,19 @@ class UsersTests(TestCase):
 
     def test_add_user_fail(self):
         # Test if user_id is already exist
-        # user_data = self.new_uc.search_user('alex')
-        # print(f" See user data {user_data}")
         expected = False
         self.assertFalse(_is_empty_user(self.new_uc.search_user('alex')))
-        # user_data = self.new_uc.search_user('alex')
-        # print(f" AAA user data {user_data}")
         self.assertEqual(self.new_uc.add_user('alex', 'alex', 'alex', 'alex'),
+                         expected)
+
+    def test_add_user_fail_length(self):
+        # Test if user_id length exceed limitation
+        expected = False
+        self.assertTrue(_is_empty_user(self.new_uc.search_user(
+            'alex30lettersaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')))
+        self.assertEqual(self.new_uc.add_user(
+            'alex30lettersaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'alex', 'alex',
+            'alex'),
                          expected)
 
 
@@ -195,3 +201,11 @@ class UsersStatusTests(TestCase):
             'alex02')))
         self.assertEqual(self.new_usc.add_status('alex02', 'alex',
                                                  'Congrats'), expected)
+
+    def test_add_status_fail_2(self):
+        # There is no corresponding User_id in database
+        expected = False
+        self.assertFalse(_is_empty_status(self.new_usc.search_status(
+            'alex02')))
+        self.assertEqual(self.new_usc.add_status('alex02', 'alex111',
+                                                 'No Status'), expected)

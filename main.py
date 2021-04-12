@@ -31,18 +31,18 @@ def init_status_collection(status_table, user_collection):
 
 def load_users(filename, user_collection):
     '''
-Opens a CSV file with user data and
-adds it to an existing instance of
-UserCollection
+    Opens a CSV file with user data and
+    adds it to an existing instance of
+    UserCollection
 
-Requirements:
-- If a user_id already exists, it
-will ignore it and continue to the
-next.
-- Returns False if there are any errors
-(such as empty fields in the source CSV file)
-- Otherwise, it returns True.
-'''
+    Requirements:
+    - If a user_id already exists, it
+    will ignore it and continue to the
+    next.
+    - Returns False if there are any errors
+    (such as empty fields in the source CSV file)
+    - Otherwise, it returns True.
+    '''
     table = user_collection._users_db
     table.insert(USER_ID='test')
     table.create_index(['USER_ID'], unique=True)
